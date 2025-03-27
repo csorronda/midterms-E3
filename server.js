@@ -17,15 +17,24 @@ async function connectDB() {
 }
 connectDB(); // Call function to connect to DB
 
-// Home Route
+//  Home Route
 app.get("/", (req, res) => {
     res.send("Welcome to the Simple Recipe Book API! Use /recipes to see all recipes.");
 });
 
-// Get all recipes
+// Get all recipes with pagination and sorting
 app.get("/recipes", async (req, res) => {
     try {
-        const recipes = await db.collection("recipes").find().toArray();
+        const { page = 1, limit = 10, sortBy = "name", order = "asc" } = req.query;
+        const sortOrder = order === "desc" ? -1 : 1;
+
+        const recipes = await db.collection("recipes")
+            .find()
+            .sort({ [sortBy]: sortOrder })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit))
+            .toArray();
+
         res.json(recipes);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch recipes" });
@@ -45,6 +54,34 @@ app.get("/recipes/:id", async (req, res) => {
         res.json(recipe);
     } catch (error) {
         res.status(500).json({ error: "Error retrieving recipe" });
+    }
+});
+
+// Search for recipes by name
+app.get("/recipes/search/:query", async (req, res) => {
+    try {
+        const { query } = req.params;
+        const recipes = await db.collection("recipes")
+            .find({ name: { $regex: query, $options: "i" } })
+            .toArray();
+
+        res.json(recipes);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to search recipes" });
+    }
+});
+
+// Get recipes by category
+app.get("/recipes/category/:category", async (req, res) => {
+    try {
+        const { category } = req.params;
+        const recipes = await db.collection("recipes")
+            .find({ category: { $regex: category, $options: "i" } })
+            .toArray();
+
+        res.json(recipes);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch recipes by category" });
     }
 });
 
@@ -113,6 +150,31 @@ app.delete("/recipes/:id", async (req, res) => {
         res.json({ message: "Recipe deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: "Failed to delete recipe" });
+    }
+});
+
+// ✅ Mark a recipe as favorite (Toggle)
+app.patch("/recipes/:id/favorite", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!ObjectId.isValid(id)) {
+            return res.status(400).json({ error: "Invalid recipe ID format" });
+        }
+
+        const recipe = await db.collection("recipes").findOne({ _id: new ObjectId(id) });
+        if (!recipe) {
+            return res.status(404).json({ error: "Recipe not found" });
+        }
+
+        const updatedRecipe = await db.collection("recipes").updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { favorite: !recipe.favorite } }
+        );
+
+        res.json({ message: `Recipe ${recipe.favorite ? "removed from" : "marked as"} favorite` });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to update favorite status" });
     }
 });
 
