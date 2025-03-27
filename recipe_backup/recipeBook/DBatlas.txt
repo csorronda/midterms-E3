@@ -1,3 +1,0 @@
-Cloud DataBase
-
-"mongodb+srv://csorronda:csorronda1@recipebook.ivvm9.mongodb.net/recipeBook?retryWrites=true&w=majority"
