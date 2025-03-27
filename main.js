@@ -7,21 +7,20 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.json());
+app.use(express.json()); 
 
-// Connect to MongoDB
-connectDB();
+
 
 // Use routes
 app.use("/", basicRoutes);
 
 const startServer = async () => {
-    await connectDB(); // Ensure DB is connected before Express starts
+    await connectDB(); // Connect to MongoDB **only once**
   
     app.listen(PORT, () => {
       console.log(`🚀 Server running at http://localhost:${PORT}`);
     });
-  };
-  
-  startServer();
-  
+};
+
+// Start the server
+startServer();

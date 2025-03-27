@@ -7,13 +7,10 @@ const connectDB = async () => {
       throw new Error("⚠️ MONGO_URI is missing in .env file!");
     }
 
-    const connection = await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGO_URI); // No extra options needed
 
     console.log("MongoDB Connected Successfully");
-    return connection; // Return the connection object
+    
   } catch (error) {
     console.error("MongoDB Connection Error:", error.message);
     process.exit(1); // Stop the server if DB connection fails
